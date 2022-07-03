@@ -52,10 +52,12 @@ class Game:
                 self.questions = pack.read().strip('\n').split('\n')
                 shuffle(self.questions)
                 self.questions = cycle(self.questions)
+    
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
             print(f'Error while loading questions ({err})')
+
             del games[str(self.ctx.channel.id)]
 
     async def select_pack(self) -> None:
@@ -118,6 +120,22 @@ class MostLikelyTo(commands.Cog):
             return str(ctx.channel.id) not in games.keys()
         return commands.check(predicate)
 
+    # Listeners ------------------------------------------------------------- #
+    @commands.Cog.listener()
+    async def on_message_delete(message):
+        """
+        Checks deleted messages. When games dictionary is empty, it skips
+        further actions. When at least one game exists, listener checks whether
+        deleted message is a game message and deletes proper game if so.
+        """
+        if not games:
+            return
+        key = str(message.channel.id)
+        if key in games.keys():
+            if message == games[key].msg:
+                del games[message.channel.id]
+                message.channel.send(embed=e.mlt[e.END])
+
     # Commands -------------------------------------------------------------- #
     @commands.command()
     @is_game_not_created()
@@ -134,7 +152,7 @@ class MostLikelyTo(commands.Cog):
     @commands.command()
     @is_game_created()
     async def end_mlt(self, ctx):
-        """Ends Most Likely To game."""
+        """Ends Most Likely To game and removes game object from dictionary."""
         key = str(ctx.channel.id)
         await games[key].msg.clear_reactions()
         await games[key].msg.edit(embed=e.mlt[e.END])
