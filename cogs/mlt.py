@@ -1,10 +1,13 @@
 from asyncio import TimeoutError
 from itertools import cycle
+from logging import getLogger
 from random import shuffle
 
 from discord.ext import commands
 
 import embeds as e
+
+logger = getLogger('discord')
 
 PACKS = {'1️⃣': 'mixed.txt'}
 
@@ -56,7 +59,7 @@ class Game:
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
-            print(f'Error while loading questions ({err})')
+            logger.error(f'Error while loading questions ({err})')
 
             del games[str(self.ctx.channel.id)]
 
@@ -165,7 +168,7 @@ class MostLikelyTo(commands.Cog):
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.mlt[e.ALREADY_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: @start_mlt.error)')
+            logger.error(f'Unknown error: {error} (handler: @start_mlt.error)')
 
     @end_mlt.error
     async def not_created_error(self, ctx, error):
@@ -173,7 +176,7 @@ class MostLikelyTo(commands.Cog):
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.mlt[e.NOT_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: @end_mlt.error)')
+            logger.error(f'Unknown error: {error} (handler: @end_mlt.error)')
 
 
 def setup(client) -> None:

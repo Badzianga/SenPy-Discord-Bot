@@ -1,8 +1,11 @@
+from logging import getLogger
 from resource import getrusage, RUSAGE_SELF
 from sys import version
 
 import discord
 from discord.ext import commands
+
+logger = getLogger('discord')
 
 
 class Info(commands.Cog):
@@ -15,7 +18,7 @@ class Info(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Bot is ready. Hello World!')
+        logger.info('Bot is ready. Hello World!')
 
     @commands.command()
     async def ping(self, ctx):

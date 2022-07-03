@@ -1,10 +1,13 @@
 from asyncio import TimeoutError
 from itertools import cycle
+from logging import getLogger
 from random import shuffle
 
 from discord.ext import commands
 
 import embeds as e
+
+logger = getLogger('discord')
 
 PACKS = {'1️⃣': ('mixed_truths.txt', 'mixed_dares.txt')}
 T_D_EMOJIS = ('🇹', '🇩')
@@ -75,7 +78,7 @@ class Game:
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
-            print(f'Error while loading questions ({err})')
+            logger.error(f'Error while loading questions ({err})')
 
             del games[str(self.ctx.channel.id)]
 
@@ -244,7 +247,7 @@ class TruthOrDare(commands.Cog):
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.tod[e.ALREADY_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: @create_tod.error)')
+            logger.error(f'Unknown error: {error} (in @create_tod.error)')
 
     @end_tod.error
     @tod_participants.error
@@ -254,7 +257,7 @@ class TruthOrDare(commands.Cog):
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.tod[e.NOT_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: hard to say which one')
+            logger.error(f'Unknown error: {error} (hard to say in which one')
 
     @join_tod.error
     async def join_tod_errors(self, ctx, error):
@@ -265,7 +268,7 @@ class TruthOrDare(commands.Cog):
             else:
                 await ctx.send(embed=e.tod[e.NOT_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: @join_tod.error)')
+            logger.error(f'Unknown error: {error} (in @join_tod.error)')
 
     @leave_tod.error
     async def leave_tod_errors(self, ctx, error):
@@ -276,7 +279,7 @@ class TruthOrDare(commands.Cog):
             else:
                 await ctx.send(embed=e.tod[e.NOT_CREATED])
         else:
-            print(f'Unknown error: {error} (handler: @leave_tod.error)')
+            logger.error(f'Unknown error: {error} (in @leave_tod.error)')
 
 
 def setup(client) -> None:
