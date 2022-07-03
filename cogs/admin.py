@@ -18,9 +18,11 @@ class Admin(commands.Cog):
             self.client.load_extension(f'cogs.{cog}')
             print(f'Extension {cog} loaded successfully.')
             await ctx.send(f'Extension {cog} loaded successfully.')
+
         except commands.ExtensionAlreadyLoaded:
             print(f'Extension {cog} is already loaded.')
             await ctx.send(f'Extension {cog} is already loaded.')
+
         except commands.ExtensionNotFound:
             print(f'Extension {cog} doesn\'t exist.')
             await ctx.send(f'Extension {cog} doesn\'t exist.')
@@ -32,15 +34,41 @@ class Admin(commands.Cog):
             print('Can\'t unload admin extension!')
             await ctx.send('Can\'t unload admin extension!')
             return
+
         try:
             self.client.unload_extension(f'cogs.{cog}')
             print(f'Extension {cog} unloaded successfully.')
             await ctx.send(f'Extension {cog} unloaded successfully.')
+
         except commands.ExtensionNotLoaded:
             cogs = [filename[:-3] for filename in listdir('./cogs')]
             if cog in cogs:
                 print(f'Extension {cog} is already unloaded.')
                 await ctx.send(f'Extension {cog} is already unloaded.')
+            else:
+                print(f'Extension {cog} is doesn\'t exist.')
+                await ctx.send(f'Extension {cog} is doesn\'t exist.')
+
+    @commands.command()
+    @commands.is_owner()
+    async def reload(self, ctx, cog: str):
+        if cog == 'admin':
+            print('Can\'t reload admin extension!')
+            await ctx.send('Can\'t reload admin extension!')
+            return
+
+        try:
+            self.client.unload_extension(f'cogs.{cog}')
+            self.client.load_extension(f'cogs.{cog}')
+            print(f'Extension {cog} reloaded successfully.')
+            await ctx.send(f'Extension {cog} reloaded successfully.')
+
+        except commands.ExtensionNotLoaded:
+            cogs = [filename[:-3] for filename in listdir('./cogs')]
+            if cog in cogs:
+                self.client.load_extension(f'cogs.{cog}')
+                print(f'Extension {cog} reloaded successfully.')
+                await ctx.send(f'Extension {cog} reloaded successfully.')
             else:
                 print(f'Extension {cog} is doesn\'t exist.')
                 await ctx.send(f'Extension {cog} is doesn\'t exist.')
