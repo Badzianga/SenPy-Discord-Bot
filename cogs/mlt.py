@@ -125,7 +125,7 @@ class MostLikelyTo(commands.Cog):
 
     # Listeners ------------------------------------------------------------- #
     @commands.Cog.listener()
-    async def on_message_delete(message):
+    async def on_message_delete(self, message):
         """
         Checks deleted messages. When games dictionary is empty, it skips
         further actions. When at least one game exists, listener checks whether
