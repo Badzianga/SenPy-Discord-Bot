@@ -55,7 +55,7 @@ class Game:
                 self.questions = pack.read().strip('\n').split('\n')
                 shuffle(self.questions)
                 self.questions = cycle(self.questions)
-    
+
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
@@ -69,7 +69,7 @@ class Game:
         under the message with packs. Selected pack is stored as cycle object
         in self.questions variable.
         """
-        # send starting message and save it to variable 
+        # send starting message and save it to variable
         self.msg = await self.ctx.send(embed=e.mlt[e.START])
 
         # add reactions under message

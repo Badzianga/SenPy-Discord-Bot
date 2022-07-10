@@ -20,6 +20,15 @@ class Info(commands.Cog):
     async def on_ready(self):
         logger.info('Bot is ready. Hello World!')
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if hasattr(ctx.command, 'on_error'):
+            return
+        if isinstance(error, commands.CommandNotFound):
+            await ctx.send('Command doesn\'t exist.')
+        else:
+            logger.error(f'Error which isn\'t handled anywhere: {error}')
+
     @commands.command()
     async def ping(self, ctx):
         await ctx.send(f'Pong! {round(self.client.latency * 1000)}ms')

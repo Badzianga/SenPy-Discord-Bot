@@ -198,7 +198,7 @@ class TruthOrDare(commands.Cog):
             embed.add_field(
                 name=player.name, value=f'#{player.discriminator}',
                 inline=False
-        )
+            )
         await ctx.send(embed=embed)
 
     @commands.command()
