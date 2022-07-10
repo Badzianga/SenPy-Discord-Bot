@@ -4,29 +4,39 @@ from os import getenv, listdir
 
 from discord.ext import commands
 
+
 # Logger -------------------------------------------------------------------- #
-logger = logging.getLogger('discord')
-logger.setLevel(logging.INFO)
-logformat = logging.Formatter(
-    fmt='%(asctime)s [%(levelname)s] %(message)s', datefmt='%d.%m.%Y %H:%M:%S'
-)
+def setup_logger() -> logging.Logger:
+    """Sets up discord logger and adds streamhandler and filehandler to it."""
+    logger = logging.getLogger('discord')
+    logger.setLevel(logging.INFO)
+    logformat = logging.Formatter(
+        fmt='%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%d.%m.%Y %H:%M:%S'
+    )
 
-filehandler = RotatingFileHandler(
-    filename='discord.log', maxBytes=(5 * 1024 * 1024), encoding='utf-8'
-)
-filehandler.setLevel(logging.INFO)
-filehandler.setFormatter(logformat)
+    filehandler = RotatingFileHandler(
+        filename='discord.log',
+        maxBytes=(5 * 1024 * 1024),
+        encoding='utf-8'
+    )
+    filehandler.setLevel(logging.INFO)
+    filehandler.setFormatter(logformat)
 
-streamhandler = logging.StreamHandler()
-streamhandler.setLevel(logging.INFO)
-streamhandler.setFormatter(logformat)
+    streamhandler = logging.StreamHandler()
+    streamhandler.setLevel(logging.INFO)
+    streamhandler.setFormatter(logformat)
 
-logger.addHandler(streamhandler)
-logger.addHandler(filehandler)
+    logger.addHandler(streamhandler)
+    logger.addHandler(filehandler)
+
+    return logger
 
 
 # Main function ------------------------------------------------------------- #
 def main():
+    logger = setup_logger()
+
     client = commands.Bot(command_prefix='`')
     client.remove_command('help')
 
