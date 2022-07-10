@@ -186,14 +186,14 @@ class TruthOrDare(commands.Cog):
         del games[key]
 
     @commands.command()
-    @is_game_created()
     @is_user_not_in_game()
+    @is_game_created()
     async def join_tod(self, ctx):
         """Adds user to Truth or Dare game and shows current participants."""
         key = str(ctx.channel.id)
         games[key].players.append(ctx.author)
 
-        embed = e.tod[e.JOIN]
+        embed = e.tod[e.JOIN].copy()
         for player in games[key].players:
             embed.add_field(
                 name=player.name, value=f'#{player.discriminator}',
@@ -202,8 +202,8 @@ class TruthOrDare(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @is_game_created()
     @is_user_in_game()
+    @is_game_created()
     async def leave_tod(self, ctx):
         """
         Removes user from Truth or Dare game and shows remaining participants.
@@ -211,7 +211,7 @@ class TruthOrDare(commands.Cog):
         key = str(ctx.channel.id)
         games[key].players.remove(ctx.author)
 
-        embed = e.tod[e.LEAVE]
+        embed = e.tod[e.LEAVE].copy()
         for player in games[key].players:
             embed.add_field(
                 name=player.name, value=f"#{player.discriminator}",
@@ -225,7 +225,7 @@ class TruthOrDare(commands.Cog):
         """Shows Truth or Dare participants."""
         key = str(ctx.channel.id)
 
-        embed = e.tod[e.PARTICIPANTS]
+        embed = e.tod[e.PARTICIPANTS].copy()
         for player in games[key].players:
             embed.add_field(
                 name=player.name, value=f"#{player.discriminator}",
@@ -238,6 +238,11 @@ class TruthOrDare(commands.Cog):
     async def start_tod(self, ctx):
         """Starts Truth or Dare game."""
         key = str(ctx.channel.id)
+        # TODO: move this check to decorator
+        if games[key].players < 2:
+            await ctx.send(embed=e.tod[e.NOT_ENOUGH_PLAYERS])
+        elif games[key].truths is None:
+            await ctx.send(embed=e.tod[e.NOT_LOADED_QUESTIONS])
         await games[key].start()
 
     # Errors ---------------------------------------------------------------- #

@@ -24,6 +24,8 @@ LOADED_QUESTIONS = 12
 TRUTH_OR_DARE_QUESTION = 13
 TRUTH = 14
 DARE = 15
+NOT_ENOUGH_PLAYERS = 16
+NOT_LOADED_QUESTIONS = 17
 
 mlt = {
     START: Embed(
@@ -124,5 +126,13 @@ tod = {
         title='Dare',
         description='',
         color=BLUE
+    ),
+    NOT_ENOUGH_PLAYERS: Embed(
+        title='At least two players are required to start the game!',
+        color=RED
+    ),
+    NOT_LOADED_QUESTIONS: Embed(
+        title='Load questions before starting the game!',
+        color=RED
     )
 }
