@@ -1,3 +1,4 @@
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 from os import getenv, listdir
@@ -34,12 +35,19 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
+# Custom prefixes ----------------------------------------------------------- #
+def get_prefix(_, message) -> str:
+    with open('prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    return prefixes[str(message.guild.id)]
+
+
 # Main function ------------------------------------------------------------- #
 def main():
     logger = setup_logger()
     load_dotenv()
 
-    client = commands.Bot(command_prefix='`')
+    client = commands.Bot(command_prefix=get_prefix)
     client.remove_command('help')
 
     for filename in listdir('./cogs'):
