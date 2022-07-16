@@ -3,3 +3,4 @@ cogs/__pycache__
 todo.txt
 discord.log
 .vscode
+.env
