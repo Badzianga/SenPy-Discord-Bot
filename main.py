@@ -3,6 +3,7 @@ from logging.handlers import RotatingFileHandler
 from os import getenv, listdir
 
 from discord.ext import commands
+from dotenv import load_dotenv
 
 
 # Logger -------------------------------------------------------------------- #
@@ -36,6 +37,7 @@ def setup_logger() -> logging.Logger:
 # Main function ------------------------------------------------------------- #
 def main():
     logger = setup_logger()
+    load_dotenv()
 
     client = commands.Bot(command_prefix='`')
     client.remove_command('help')
