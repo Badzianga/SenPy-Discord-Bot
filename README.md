@@ -27,3 +27,6 @@ For now, this bot has simple 'Most Likely To' and 'Truth or Dare' game (however,
 - \`load *cog_name*
 - \`unload *cog_name*
 - \`reload *cog_name*
+
+# Available commands - Prefixes
+- \`change_prefix *command_prefix*
