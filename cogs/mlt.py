@@ -136,8 +136,9 @@ class MostLikelyTo(commands.Cog):
         key = str(message.channel.id)
         if key in games.keys():
             if message == games[key].msg:
-                del games[message.channel.id]
-                message.channel.send(embed=e.mlt[e.END])
+                games[key].wait_for_reaction_coroutine.close()
+                del games[key]
+                await message.channel.send(embed=e.mlt[e.END])
 
     # Commands -------------------------------------------------------------- #
     @commands.command()
