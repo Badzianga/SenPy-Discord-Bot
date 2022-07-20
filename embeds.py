@@ -26,6 +26,12 @@ TRUTH = 14
 DARE = 15
 NOT_ENOUGH_PLAYERS = 16
 NOT_LOADED_QUESTIONS = 17
+EMPTY_QUERY = 18
+USER_NOT_CONNECTED = 19
+NOT_CONNECTED = 20
+CLEARED = 21
+QUEUE = 22
+CURRENTLY_PLAYING = 23
 
 mlt = {
     START: Embed(
@@ -134,5 +140,32 @@ tod = {
     NOT_LOADED_QUESTIONS: Embed(
         title='Load questions before starting the game!',
         color=RED
+    )
+}
+
+music = {
+    EMPTY_QUERY: Embed(
+        title='Pass name of the song or link!',
+        color=RED
+    ),
+    USER_NOT_CONNECTED: Embed(
+        title='You are not connected to a voice channel!',
+        color=RED
+    ),
+    NOT_CONNECTED: Embed(
+        title='I\'m not connected to voice channel!',
+        color=RED
+    ),
+    CLEARED: Embed(
+        title='Music queue cleared.',
+        color=BLUE
+    ),
+    QUEUE: Embed(
+        title='Music queue:',
+        color=BLUE
+    ),
+    CURRENTLY_PLAYING: Embed(
+        title='Currently playing:',
+        color=BLUE
     )
 }
