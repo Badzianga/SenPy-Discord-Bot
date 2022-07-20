@@ -52,13 +52,13 @@ class Game:
                 self.questions = pack.read().strip('\n').split('\n')
                 shuffle(self.questions)
                 self.questions = cycle(self.questions)
-
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
-            logger.error(f'Error while loading questions ({err})')
-
-            del games[str(self.ctx.channel.id)]
+            logger.error(f'Error while loading MLT questions ({err})')
+            key = str(self.ctx.channel.id)
+            games[key].wait_for_reaction_coroutine.close()
+            del games[key]
 
     async def select_pack(self) -> None:
         """
