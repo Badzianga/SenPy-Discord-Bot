@@ -20,6 +20,8 @@ class Game:
         self.ctx = ctx
         self.questions = None
         self.msg = None
+        # used for preventing KeyError in _after_timeout after typing end_mlt
+        self.wait_for_reaction_coroutine = None
 
     async def _after_timeout(self) -> None:
         """
@@ -29,12 +31,7 @@ class Game:
         key = str(self.ctx.channel.id)
         await self.msg.edit(embed=e.mlt[e.TIMEOUT])
         await self.msg.clear_reactions()
-        try:
-            del games[key]
-        except KeyError:
-            # KeyError occurs when key was deleted by using end_mlt command
-            # maybe I can change this in the future so it's not needed
-            pass
+        del games[key]
 
     def _check_arrow_reaction(self, reaction, user) -> bool:
         """Checks if user reacted with arrow emoji to give next question."""
@@ -78,9 +75,10 @@ class Game:
 
         try:
             # waits for proper reaction; if time expires, end game
-            reaction, _ = await self.client.wait_for(
+            self.wait_for_reaction_coroutine = self.client.wait_for(
                 'reaction_add', timeout=30.0, check=self._check_number_reaction
             )
+            reaction, _ = await self.wait_for_reaction_coroutine
             await self._load_questions(reaction)
         except TimeoutError:
             await self._after_timeout()
@@ -98,9 +96,11 @@ class Game:
                 question = f'Who is most likely to {next(self.questions)}?'
                 embed = e.Embed(description=question, color=e.BLUE)
                 await self.msg.edit(embed=embed)
-                reaction, user = await self.client.wait_for(
-                    'reaction_add', timeout=180.0,
-                    check=self._check_arrow_reaction)
+                self.wait_for_reaction_coroutine = self.client.wait_for(
+                    'reaction_add', timeout=300.0,
+                    check=self._check_arrow_reaction
+                )
+                reaction, user = await self.wait_for_reaction_coroutine
                 await self.msg.remove_reaction(reaction, user)
         except TimeoutError:
             await self._after_timeout()
@@ -146,9 +146,10 @@ class MostLikelyTo(commands.Cog):
         """Starts Most Likely To game and allows to select question pack."""
         key = str(ctx.channel.id)
         games[key] = Game(self.client, ctx)
+        # select_pack() can delete game after timeout occurence
         await games[key].select_pack()
-        # after timeout in select_pack(), start() was still called
-        # that's why this if statement is needed
+        # that's why this check should exist before starting the game
+        # I just prevent KeyError here
         if key in games.keys():
             await games[key].start()
 
@@ -159,24 +160,27 @@ class MostLikelyTo(commands.Cog):
         key = str(ctx.channel.id)
         await games[key].msg.clear_reactions()
         await games[key].msg.edit(embed=e.mlt[e.END])
+        # this one closes wait_for reaction coroutine
+        # thanks to that KeyError won't occur in _after_timeout
+        games[key].wait_for_reaction_coroutine.close()
         del games[key]
 
     # Errors ---------------------------------------------------------------- #
     @start_mlt.error
-    async def already_created_error(self, ctx, error):
+    async def start_mlt_errors(self, ctx, error):
         """Error handler if game is already created."""
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.mlt[e.ALREADY_CREATED])
         else:
-            logger.error(f'Unknown error: {error} (handler: @start_mlt.error)')
+            logger.error(f'Unknown error in start_mlt: {error}')
 
     @end_mlt.error
-    async def not_created_error(self, ctx, error):
+    async def end_mlt_errors(self, ctx, error):
         """Error handler if game is not created."""
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.mlt[e.NOT_CREATED])
         else:
-            logger.error(f'Unknown error: {error} (handler: @end_mlt.error)')
+            logger.error(f'Unknown error in end_mlt: {error}')
 
 
 def setup(client) -> None:
