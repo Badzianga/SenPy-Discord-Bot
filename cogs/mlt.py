@@ -1,5 +1,4 @@
 from asyncio import TimeoutError
-from itertools import cycle
 from logging import getLogger
 from random import shuffle
 
@@ -129,7 +128,7 @@ class MostLikelyTo(commands.Cog):
 
     # Listeners ------------------------------------------------------------- #
     @commands.Cog.listener()
-    async def on_message_delete(self, message):
+    async def on_raw_message_delete(self, payload):
         """
         Checks deleted messages. When games dictionary is empty, it skips
         further actions. When at least one game exists, listener checks whether
@@ -137,12 +136,12 @@ class MostLikelyTo(commands.Cog):
         """
         if not games:
             return
-        key = str(message.channel.id)
+        key = str(payload.channel_id)
         if key in games.keys():
-            if message == games[key].msg:
+            if payload.message_id == games[key].msg.id:
                 games[key].wait_for_reaction_coroutine.close()
+                await games[key].message.channel.send(embed=e.mlt[e.END])
                 del games[key]
-                await message.channel.send(embed=e.mlt[e.END])
 
     # Commands -------------------------------------------------------------- #
     @commands.command()
