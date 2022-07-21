@@ -6,6 +6,11 @@ SenPy is a Discord bot written in Python and Discord.py
 For now, this bot has simple 'Most Likely To' and 'Truth or Dare' game (however, I don't have many questions), displaying a few informations about bot (latency, versions, RAM usage) and managing cogs (owner-exclusive).
 
 
+# Add to server
+You can add SenPy to your Discord server by clicking [here](https://discord.com/api/oauth2/authorize?client_id=988869906672025621&permissions=8&scope=bot).
+However, you will need admin privileges on server. 
+
+
 # Available commands - Most Likely To
 - \`start_mlt
 - \`end_mlt
