@@ -32,6 +32,7 @@ NOT_CONNECTED = 20
 CLEARED = 21
 QUEUE = 22
 CURRENTLY_PLAYING = 23
+NO_MORE_QUESTIONS = 24
 
 mlt = {
     START: Embed(
@@ -60,6 +61,10 @@ mlt = {
     NOT_CREATED: Embed(
         title='There isn\'t created game on this channel!',
         color=RED
+    ),
+    NO_MORE_QUESTIONS: Embed(
+        title='No more questions! Game ended!',
+        color=YELLOW
     )
 }
 

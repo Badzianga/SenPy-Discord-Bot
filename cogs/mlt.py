@@ -51,7 +51,6 @@ class Game:
             with open(f'files/mlt/{PACKS[reaction.emoji]}', 'r') as pack:
                 self.questions = pack.read().strip('\n').split('\n')
                 shuffle(self.questions)
-                self.questions = cycle(self.questions)
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
@@ -92,8 +91,8 @@ class Game:
         await self.msg.add_reaction('➡️')
 
         try:
-            while True:
-                question = f'Who is most likely to {next(self.questions)}?'
+            while self.questions:
+                question = f'Who is most likely to {self.questions.pop()}?'
                 embed = e.Embed(description=question, color=e.BLUE)
                 await self.msg.edit(embed=embed)
                 self.wait_for_reaction_coroutine = self.client.wait_for(
@@ -102,6 +101,11 @@ class Game:
                 )
                 reaction, user = await self.wait_for_reaction_coroutine
                 await self.msg.remove_reaction(reaction, user)
+            # end the game after all questions
+            key = str(self.ctx.channel.id)
+            await self.msg.clear_reactions()
+            await self.msg.edit(embed=e.mlt[e.NO_MORE_QUESTIONS])
+            del games[key]
         except TimeoutError:
             await self._after_timeout()
 
