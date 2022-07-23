@@ -143,6 +143,33 @@ class MostLikelyTo(commands.Cog):
                 await games[key].message.channel.send(embed=e.mlt[e.END])
                 del games[key]
 
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(channel):
+        """
+        Checks deleted channels. If channel has active game, listener properly
+        deletes it.
+        """
+        if not games:
+            return
+        key = str(channel.id)
+        if key in games.keys():
+            games[key].wait_for_reaction_coroutine.close()
+            del games[key]
+
+    @commands.Cog.listener()
+    async def on_guild_remove(guild):
+        """
+        Checks left guild events. If any of channels in the guild had active
+        game, listener properly deletes this game.
+        """
+        if not games:
+            return
+        for channel in guild.channels:
+            key = str(channel.id)
+            if key in games.keys():
+                games[key].wait_for_reaction_coroutine.close()
+                del games[key]
+
     # Commands -------------------------------------------------------------- #
     @commands.command()
     @is_game_not_created()
