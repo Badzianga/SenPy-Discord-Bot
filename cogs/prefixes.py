@@ -16,7 +16,8 @@ class PrefixManager(commands.Cog):
     async def on_ready(self):
         """
         Create prefixes.json file if it doesn't exist. Then set default prefix
-        for guilds added during bot absence.
+        for guilds added during bot absence and clear guilds deleted during bot
+        absence.
         """
         # create file
         if 'prefixes.json' not in listdir():
@@ -24,15 +25,28 @@ class PrefixManager(commands.Cog):
                 json.dump({}, f)
             logger.info('Created prefixes.json')
 
-        # set default prefix
+        # load prefixes
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
+        # set default prefix for guilds added during bot absence
         for guild in self.client.guilds:
             if str(guild.id) not in prefixes.keys():
                 prefixes[str(guild.id)] = '`'
                 logger.info(f'Set default prefix for guild {guild.id}')
 
+        # delete unused guild ids (removed guilds during bot absence)
+        client_guild_ids = set([str(guild.id) for guild in self.client.guilds])
+        to_delete = []
+        for guild_id in prefixes.keys():
+            if guild_id not in client_guild_ids:
+                to_delete.append(guild_id)
+        # deleting keys during iteration throws RuntimeError
+        for guild_id in to_delete:
+            del prefixes[guild_id]
+            logger.info(f'Deleted guild {guild_id} from prefixes')
+
+        # save prefixes
         with open('prefixes.json', 'w') as f:
             json.dump(prefixes, f)
 
