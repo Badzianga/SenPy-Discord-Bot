@@ -32,6 +32,14 @@ However, you will need admin privileges on server.
 - \`load *cog_name*
 - \`unload *cog_name*
 - \`reload *cog_name*
+- \`clear_logs
+
+# Available commands - Music
+- \`play *song_name_or_youtube_link*
+- \`queue
+- \`clear
+- \`leave
+
 
 # Available commands - Prefixes
 - \`change_prefix *command_prefix*

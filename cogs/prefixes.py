@@ -75,7 +75,7 @@ class PrefixManager(commands.Cog):
     # Commands -------------------------------------------------------------- #
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def set_prefix(self, ctx, prefix: str):
+    async def change_prefix(self, ctx, prefix: str):
         """Change guild prefix."""
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
