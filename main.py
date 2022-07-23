@@ -3,6 +3,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from os import getenv, listdir
 
+from discord import Intents
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -35,6 +36,17 @@ def setup_logger() -> logging.Logger:
     return logger
 
 
+# Intents ------------------------------------------------------------------- #
+def get_intents() -> Intents:
+    # I don't use all intents from Intents.default() so I'm creating my own
+    # set of intents
+    intents = Intents().none()
+    intents.guild_messages = True
+    intents.guild_reactions = True
+    intents.guilds = True
+    intents.voice_states = True
+    return intents
+
 # Custom prefixes ----------------------------------------------------------- #
 def get_prefix(_, message) -> str:
     with open('prefixes.json', 'r') as f:
@@ -47,7 +59,7 @@ def main():
     logger = setup_logger()
     load_dotenv()
 
-    client = commands.Bot(command_prefix=get_prefix)
+    client = commands.Bot(command_prefix=get_prefix, intents=get_intents())
     client.remove_command('help')
 
     for filename in listdir('./cogs'):
