@@ -3,7 +3,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 from os import getenv, listdir
 
-from discord import Intents
+from aiohttp import ClientConnectorError
+from discord import Intents, LoginFailure
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -75,7 +76,12 @@ def main():
             client.load_extension(f'cogs.{filename[:-3]}')
             logger.info(f'Loaded extension: {filename[:-3]}')
 
-    client.run(getenv('TOKEN'))
+    try:
+        client.run(getenv('TOKEN'))
+    except ClientConnectorError:
+        logger.critical('Cannot connect to Discord. Aborting...')
+    except LoginFailure:
+        logger.critical('Improper token has been passed. Aborting...')
 
 
 if __name__ == '__main__':
