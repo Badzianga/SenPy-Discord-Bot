@@ -54,15 +54,13 @@ class Game:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
             logger.error(f'Error while loading MLT questions ({err})')
-            key = str(self.ctx.channel.id)
-            games[key].wait_for_reaction_coroutine.close()
-            del games[key]
+            del games[str(self.ctx.channel.id)]
 
     async def select_pack(self) -> None:
         """
         Function used for selecting question pack by reacting with proper emoji
-        under the message with packs. Selected pack is stored as cycle object
-        in self.questions variable.
+        under the message with packs. Selected pack is stored as list in
+        self.questions variable.
         """
         # send starting message and save it to variable
         self.msg = await self.ctx.send(embed=e.mlt[e.START])
