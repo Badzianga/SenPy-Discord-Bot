@@ -92,7 +92,7 @@ tod = {
     JOIN: Embed(
         title='Truth Or Dare game joined!',
         description='Current participants:',
-        color=RED
+        color=GREEN
     ),
     LEAVE: Embed(
         title='Truth Or Dare game left!',
