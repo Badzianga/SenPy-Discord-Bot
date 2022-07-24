@@ -24,6 +24,8 @@ class Game:
         self.dares = None
         self.players = []
         self.current_player = None
+        # used for preventing KeyError in _after_timeout after typing end_todf
+        self.wait_for_reaction_coroutine = None
 
     async def _after_timeout(self) -> None:
         """
@@ -33,12 +35,7 @@ class Game:
         key = str(self.ctx.channel.id)
         await self.msg.edit(embed=e.tod[e.TIMEOUT])
         await self.msg.clear_reactions()
-        try:
-            del games[key]
-        except KeyError:
-            # KeyError occurs when key was deleted by using end_tod command
-            # maybe I can change this in the future so it's not needed
-            pass
+        del games[key]
 
     def _check_number_reaction(self, reaction, user) -> bool:
         """Checks if user reacted with proper number emoji to select pack."""
@@ -58,35 +55,30 @@ class Game:
         selection, embed with information is sended.
         """
         try:
+            # get pack filenames
             truths_filename, dares_filename = PACKS[str(reaction.emoji)]
-
+            # load truths
             with open(f'files/tod/{truths_filename}', 'r') as pack:
                 self.truths = pack.read().strip('\n').split('\n')
                 shuffle(self.truths)
-                self.truths = cycle(self.truths)
-
+            # load dares
             with open(f'files/tod/{dares_filename}', 'r') as pack:
                 self.dares = pack.read().strip('\n').split('\n')
                 shuffle(self.dares)
-                self.dares = cycle(self.dares)
-
+            # clear reactions and send success message
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.tod[e.LOADED_QUESTIONS])
-
-            # del self.msg
-
         except FileNotFoundError as err:
             await self.msg.clear_reactions()
             await self.msg.edit(embed=e.mlt[e.IMPORT_ERROR])
-            logger.error(f'Error while loading questions ({err})')
-
+            logger.error(f'Error while loading ToD questions ({err})')
             del games[str(self.ctx.channel.id)]
 
     async def select_pack(self) -> None:
         """
         Function used for selecting question pack by reacting with proper emoji
-        under the message with packs names. Selected packs are
-        stored as cycle objects in self.truths and self.dares variables.
+        under the message with packs names. Selected packs are stored as lists
+        in self.truths and self.dares variables.
         """
         self.msg = await self.ctx.send(embed=e.tod[e.CREATE])
 
@@ -95,9 +87,10 @@ class Game:
 
         try:
             # waits for proper reaction; if time expires, game ends
-            reaction, _ = await self.client.wait_for(
-                "reaction_add", timeout=30.0, check=self._check_number_reaction
+            self.wait_for_reaction_coroutine = self.client.wait_for(
+                'reaction_add', timeout=30.0, check=self._check_number_reaction
             )
+            reaction, _ = await self.wait_for_reaction_coroutine
             await self._load_questions(reaction)
         except TimeoutError:
             await self._after_timeout()
@@ -107,32 +100,40 @@ class Game:
         Main loop of the game. It changes current player, sends question, waits
         for reaction and gives truth or dare. After that, the cycle repeats.
         """
+        # firstly, change players list to cycle object
+        self.players = cycle(self.players)
+
         try:
-            while True:
-                for player in self.players:
-                    self.current_player = player
+            while self.truths and self.dares:  # both of lists can't be empty
+                self.current_player = next(self.players)
 
-                    embed = e.tod[e.TRUTH_OR_DARE_QUESTION]
-                    embed.description = f'Current user: {player.name}'
-                    self.msg = await self.ctx.send(embed=embed)
-                    await self.msg.add_reaction('🇹')
-                    await self.msg.add_reaction('🇩')
-                    reaction, _ = await self.client.wait_for(
-                        'reaction_add', timeout=300.0,
-                        check=self._check_td_reaction
-                    )
-                    await self.msg.clear_reactions()
+                embed = e.tod[e.TRUTH_OR_DARE_QUESTION]
+                embed.description = f'Current user: {self.current_player.name}'
+                self.msg = await self.ctx.send(embed=embed)
+                await self.msg.add_reaction('🇹')
+                await self.msg.add_reaction('🇩')
+                self.wait_for_reaction_coroutine = self.client.wait_for(
+                    'reaction_add', timeout=600.0,
+                    check=self._check_td_reaction
+                )
+                reaction, _ = await self.wait_for_reaction_coroutine
+                await self.msg.clear_reactions()
 
-                    if str(reaction.emoji) == '🇹':
-                        embed = e.tod[e.TRUTH]
-                        embed.description = next(self.truths)
-                    elif str(reaction.emoji) == '🇩':
-                        embed = e.tod[e.DARE]
-                        embed.description = next(self.dares)
-                    await self.msg.edit(embed=embed)
+                if str(reaction.emoji) == '🇹':
+                    embed = e.tod[e.TRUTH]
+                    embed.description = self.truths.pop()
+                elif str(reaction.emoji) == '🇩':
+                    embed = e.tod[e.DARE]
+                    embed.description = self.dares.pop()
+                await self.msg.edit(embed=embed)
+            # end the game after all questions
+            key = str(self.ctx.channel.id)
+            await self.msg.clear_reactions()
+            await self.msg.edit(embed=e.tod[e.NO_MORE_QUESTIONS])
+            del games[key]
 
         except TimeoutError:
-            await self._after_timeout(str(self.ctx.channel.id))
+            await self._after_timeout()
 
 
 class TruthOrDare(commands.Cog):
@@ -164,6 +165,50 @@ class TruthOrDare(commands.Cog):
             return ctx.author in games[str(ctx.channel.id)].players
         return commands.check(predicate)
 
+    # Listeners ------------------------------------------------------------- #
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload):
+        """
+        Checks deleted messages. When games dictionary is empty, it skips
+        further actions. When at least one game exists, listener checks whether
+        deleted message is a game message and deletes proper game if so.
+        """
+        if not games:
+            return
+        key = str(payload.channel_id)
+        if key in games.keys():
+            if payload.message_id == games[key].msg.id:
+                games[key].wait_for_reaction_coroutine.close()
+                await games[key].message.channel.send(embed=e.mlt[e.END])
+                del games[key]
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(channel):
+        """
+        Checks deleted channels. If channel has active game, listener properly
+        deletes it.
+        """
+        if not games:
+            return
+        key = str(channel.id)
+        if key in games.keys():
+            games[key].wait_for_reaction_coroutine.close()
+            del games[key]
+
+    @commands.Cog.listener()
+    async def on_guild_remove(guild):
+        """
+        Checks left guild events. If any of channels in the guild had active
+        game, listener properly deletes this game.
+        """
+        if not games:
+            return
+        for channel in guild.channels:
+            key = str(channel.id)
+            if key in games.keys():
+                games[key].wait_for_reaction_coroutine.close()
+                del games[key]
+
     # Commands -------------------------------------------------------------- #
     @commands.command()
     @is_game_not_created()
@@ -183,6 +228,7 @@ class TruthOrDare(commands.Cog):
         key = str(ctx.channel.id)
         await games[key].msg.clear_reactions()
         await ctx.send(embed=e.tod[e.END])
+        games[key].wait_for_reaction_coroutine.close()
         del games[key]
 
     @commands.command()
@@ -194,11 +240,9 @@ class TruthOrDare(commands.Cog):
         games[key].players.append(ctx.author)
 
         embed = e.tod[e.JOIN].copy()
-        for player in games[key].players:
-            embed.add_field(
-                name=player.name, value=f'#{player.discriminator}',
-                inline=False
-            )
+        embed.description += '\n' + '\n'.join(
+            [player.name for player in games[key].players]
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -212,11 +256,9 @@ class TruthOrDare(commands.Cog):
         games[key].players.remove(ctx.author)
 
         embed = e.tod[e.LEAVE].copy()
-        for player in games[key].players:
-            embed.add_field(
-                name=player.name, value=f"#{player.discriminator}",
-                inline=False
-            )
+        embed.description += '\n' + '\n'.join(
+            [player.name for player in games[key].players]
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -226,11 +268,9 @@ class TruthOrDare(commands.Cog):
         key = str(ctx.channel.id)
 
         embed = e.tod[e.PARTICIPANTS].copy()
-        for player in games[key].players:
-            embed.add_field(
-                name=player.name, value=f"#{player.discriminator}",
-                inline=False
-            )
+        embed.description += '\n' + '\n'.join(
+            [player.name for player in games[key].players]
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -241,7 +281,7 @@ class TruthOrDare(commands.Cog):
         # TODO: move this check to decorator
         if games[key].players < 2:
             await ctx.send(embed=e.tod[e.NOT_ENOUGH_PLAYERS])
-        elif games[key].truths is None:
+        if games[key].truths is None:
             await ctx.send(embed=e.tod[e.NOT_LOADED_QUESTIONS])
         await games[key].start()
 
@@ -262,7 +302,7 @@ class TruthOrDare(commands.Cog):
         if isinstance(error, commands.CheckFailure):
             await ctx.send(embed=e.tod[e.NOT_CREATED])
         else:
-            logger.error(f'Unknown error: {error} (hard to say in which one')
+            logger.error(f'Unknown error: {error} (hard to say in which one)')
 
     @join_tod.error
     async def join_tod_errors(self, ctx, error):

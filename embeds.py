@@ -145,6 +145,10 @@ tod = {
     NOT_LOADED_QUESTIONS: Embed(
         title='Load questions before starting the game!',
         color=RED
+    ),
+    NO_MORE_QUESTIONS: Embed(
+        title='No more truths or dares! Game ended!',
+        color=YELLOW
     )
 }
 
