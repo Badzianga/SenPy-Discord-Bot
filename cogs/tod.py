@@ -179,7 +179,7 @@ class TruthOrDare(commands.Cog):
         if key in games.keys():
             if payload.message_id == games[key].msg.id:
                 games[key].wait_for_reaction_coroutine.close()
-                await games[key].message.channel.send(embed=e.mlt[e.END])
+                await games[key].ctx.send(embed=e.mlt[e.END])
                 del games[key]
 
     @commands.Cog.listener()
@@ -279,11 +279,12 @@ class TruthOrDare(commands.Cog):
         """Starts Truth or Dare game."""
         key = str(ctx.channel.id)
         # TODO: move this check to decorator
-        if games[key].players < 2:
+        if len(games[key].players) < 2:
             await ctx.send(embed=e.tod[e.NOT_ENOUGH_PLAYERS])
         if games[key].truths is None:
             await ctx.send(embed=e.tod[e.NOT_LOADED_QUESTIONS])
-        await games[key].start()
+        else:
+            await games[key].start()
 
     # Errors ---------------------------------------------------------------- #
     @create_tod.error
