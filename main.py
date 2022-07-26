@@ -19,7 +19,7 @@ def setup_logger(config: dict) -> logging.Logger:
         datefmt='%d.%m.%Y %H:%M:%S'
     )
 
-    if config['LoggingFileHandler']:
+    if config['EnableLoggingFileHandler']:
         filehandler = RotatingFileHandler(
             filename='discord.log',
             maxBytes=(config['LogFileSizeInMegabytes'] * 1024 * 1024),
@@ -29,7 +29,7 @@ def setup_logger(config: dict) -> logging.Logger:
         filehandler.setFormatter(logformat)
         logger.addHandler(filehandler)
 
-    if config['LoggingStreamHandler']:
+    if config['EnableLoggingStreamHandler']:
         streamhandler = logging.StreamHandler()
         streamhandler.setLevel(logging.INFO)
         streamhandler.setFormatter(logformat)

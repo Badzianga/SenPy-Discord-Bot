@@ -1,6 +1,6 @@
 {
     "BlacklistedCogs": [],
-    "LoggingStreamHandler": true,
-    "LoggingFileHandler": true,
+    "EnableLoggingStreamHandler": true,
+    "EnableLoggingFileHandler": true,
     "LogFileSizeInMegabytes": 5
 }
