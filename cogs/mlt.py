@@ -25,7 +25,7 @@ class Game:
     async def _after_timeout(self) -> None:
         """
         Deletes key from the 'games' dictionary when timeout occurs. Removes
-        all reactions from game message and changes it's content.
+        all reactions from game message and changes its content.
         """
         key = str(self.ctx.channel.id)
         await self.msg.edit(embed=e.mlt[e.TIMEOUT])
@@ -60,7 +60,7 @@ class Game:
         """
         Function used for selecting question pack by reacting with proper emoji
         under the message with packs. Selected pack is stored as list in
-        self.questions variable.
+        questions variable.
         """
         # send starting message and save it to variable
         self.msg = await self.ctx.send(embed=e.mlt[e.START])
@@ -142,7 +142,7 @@ class MostLikelyTo(commands.Cog):
                 del games[key]
 
     @commands.Cog.listener()
-    async def on_guild_channel_delete(channel):
+    async def on_guild_channel_delete(self, channel):
         """
         Checks deleted channels. If channel has active game, listener properly
         deletes it.
@@ -155,7 +155,7 @@ class MostLikelyTo(commands.Cog):
             del games[key]
 
     @commands.Cog.listener()
-    async def on_guild_remove(guild):
+    async def on_guild_remove(self, guild):
         """
         Checks left guild events. If any of channels in the guild had active
         game, listener properly deletes this game.
@@ -175,7 +175,7 @@ class MostLikelyTo(commands.Cog):
         """Starts Most Likely To game and allows to select question pack."""
         key = str(ctx.channel.id)
         games[key] = Game(self.client, ctx)
-        # select_pack() can delete game after timeout occurence
+        # select_pack() can delete game after timeout occurrence
         await games[key].select_pack()
         # that's why this check should exist before starting the game
         # I just prevent KeyError here
