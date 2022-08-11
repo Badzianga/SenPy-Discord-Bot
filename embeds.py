@@ -33,6 +33,13 @@ CLEARED = 21
 QUEUE = 22
 CURRENTLY_PLAYING = 23
 NO_MORE_QUESTIONS = 24
+MISSING_ARGUMENT = 25
+NOT_FOUND = 26
+SUCCESSFULLY_ADDED = 27
+ALREADY_ADDED = 28
+SUCCESSFULLY_REMOVED = 29
+NO_SUBREDDITS = 30
+SUBREDDITS = 31
 
 mlt = {
     START: Embed(
@@ -175,6 +182,42 @@ music = {
     ),
     CURRENTLY_PLAYING: Embed(
         title='Currently playing:',
+        color=BLUE
+    )
+}
+
+rs = {
+    MISSING_ARGUMENT: Embed(
+        title='You have to type subreddit name after command!',
+        color=RED
+    ),
+    NOT_FOUND: Embed(
+        title='Subreddit not found!',
+        color=RED
+    ),
+    SUCCESSFULLY_ADDED: Embed(
+        title='Subreddit added to this channel!',
+        color=GREEN
+    ),
+    ALREADY_ADDED: Embed(
+        title='This subreddit is already added to this channel!',
+        color=RED
+    ),
+    NOT_CONNECTED: Embed(
+        title='This subreddit is not connected to this channel!',
+        color=RED
+    ),
+    SUCCESSFULLY_REMOVED: Embed(
+        title='This subreddit will no longer be connected to this channel.',
+        color=GREEN
+    ),
+    NO_SUBREDDITS: Embed(
+        title='There aren\'t any subreddits connected to this channel!',
+        color=RED
+    ),
+    SUBREDDITS: Embed(
+        title='Connected subreddits:',
+        description='',
         color=BLUE
     )
 }
