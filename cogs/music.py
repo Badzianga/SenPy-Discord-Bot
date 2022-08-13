@@ -22,22 +22,28 @@ class MusicInstance:
     def __init__(self, client, voice_channel) -> None:
         self.client = client
         self.voice_channel = voice_channel
-        self.voice_client = None
+        self.voice_client = None  # connection with vc, used for playing songs
         self.queue = []
 
     def play_next(self):
+        """Gets next song from queue and plays it."""
         song_data = self.queue.pop(0)
         url = song_data['source']
-        title = song_data['title']
+        # title = song_data['title']
 
         self.voice_client.play(
             FFmpegPCMAudio(url, **FFMPEG_OPTIONS),
             after=lambda: self.play_next()
         )
-        embed = e.music[e.CURRENTLY_PLAYING].copy()
-        embed.description = title
+        # that won't work now, it's not async
+        # embed = e.music[e.CURRENTLY_PLAYING].copy()
+        # embed.description = title
 
     async def play_music(self, ctx) -> None:
+        """
+        Plays song for the first time. It connects to the voice channel, plays
+        a song and sends an embed with current song's title.
+        """
         song_data = self.queue.pop(0)
         url = song_data['source']
         title = song_data['title']
@@ -61,7 +67,7 @@ class MoriohChoRadio(commands.Cog):
         self.client = client
 
     def _search(self, query: str) -> dict:
-        """Search YouTube for specified query."""
+        """Searches YouTube for a specified query."""
         ydl = YoutubeDL(YDL_OPTIONS)
         try:
             # I'm taking only one result, later I can take like 10 entries
@@ -69,12 +75,12 @@ class MoriohChoRadio(commands.Cog):
             song = result['entries'][0]
         except Exception as err:
             # for now I want to know which errors it can catch
-            logger.error(f'Unhandled exception: {err}')
+            logger.error(f'Unhandled error in MoriohChoRadio._search: {err}')
             return {}
         return {'source': song['formats'][0]['url'], 'title': song['title']}
 
     # Commands -------------------------------------------------------------- #
-    @commands.command()
+    @commands.command(aliases=['p'])
     async def play(self, ctx, *args):
         """Plays a song with the given title or link."""
         # get text from command and send error if empty
@@ -89,15 +95,18 @@ class MoriohChoRadio(commands.Cog):
             await ctx.send(embed=e.music[e.USER_NOT_CONNECTED])
             return
 
+        # get song data from YouTube
         key = str(ctx.guild.id)
         song_data = self._search(query)
+        # create MusicInstance for guild if not created
         if key not in instances.keys():
             instances[key] = MusicInstance(self.client, voice_channel)
 
+        # add song to queue and play it if bot doesn't play anything
         instances[key].queue.append(song_data)
         await instances[key].play_music(ctx)
 
-    @commands.command()
+    @commands.command(aliases=['q'])
     async def queue(self, ctx):
         """Shows songs in music queue."""
         key = str(ctx.guild.id)
@@ -114,7 +123,7 @@ class MoriohChoRadio(commands.Cog):
                     )
             await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=['c'])
     async def clear(self, ctx):
         """Stops currently played music and clear queue."""
         key = str(ctx.guild.id)
@@ -125,13 +134,14 @@ class MoriohChoRadio(commands.Cog):
             instances[key].queue = []
             await ctx.send(embed=e.music[e.CLEARED])
 
-    @commands.command()
+    @commands.command(aliases=['l'])
     async def leave(self, ctx):
         """Kicks the bot from voice channel and delete music instance."""
         key = str(ctx.guild.id)
         if key not in instances.keys():
             await ctx.send(embed=e.music[e.NOT_CONNECTED])
         else:
+            # TODO: stop playing music here if some errors occur in the future
             await instances[key].voice_client.disconnect()
             del instances[key]
 
