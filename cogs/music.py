@@ -2,6 +2,7 @@ from logging import getLogger
 
 from discord import FFmpegPCMAudio
 from discord.ext import commands
+from syncer import sync
 from youtube_dl import YoutubeDL
 
 import embeds as e
@@ -24,20 +25,25 @@ class MusicInstance:
         self.voice_channel = voice_channel
         self.voice_client = None  # connection with vc, used for playing songs
         self.queue = []
+        self.channel = None
 
-    def play_next(self):
-        """Gets next song from queue and plays it."""
+    @sync  # I want to use await in here, but I can't call await in lambda
+    async def _play_next(self):  # that's why I hope @sync will work
+        """
+        Gets next song from queue, plays it and sends embed with current song's
+        title.
+        """
         song_data = self.queue.pop(0)
         url = song_data['source']
-        # title = song_data['title']
+        title = song_data['title']
 
         self.voice_client.play(
             FFmpegPCMAudio(url, **FFMPEG_OPTIONS),
-            after=lambda: self.play_next()
+            after=lambda: self._play_next()
         )
-        # that won't work now, it's not async
-        # embed = e.music[e.CURRENTLY_PLAYING].copy()
-        # embed.description = title
+        embed = e.music[e.CURRENTLY_PLAYING].copy()
+        embed.description = title
+        await self.channel.send(embed=embed)
 
     async def play_music(self, ctx) -> None:
         """
@@ -55,11 +61,12 @@ class MusicInstance:
 
         self.voice_client.play(
             FFmpegPCMAudio(url, **FFMPEG_OPTIONS),
-            after=lambda: self.play_next()
+            after=lambda: self._play_next()
         )
         embed = e.music[e.CURRENTLY_PLAYING].copy()
         embed.description = title
-        await ctx.send(embed=embed)
+        message = await ctx.send(embed=embed)
+        self.channel = message.channel
 
 
 class MoriohChoRadio(commands.Cog):
