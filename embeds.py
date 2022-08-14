@@ -40,6 +40,8 @@ ALREADY_ADDED = 28
 SUCCESSFULLY_REMOVED = 29
 NO_SUBREDDITS = 30
 SUBREDDITS = 31
+NO_MUSIC = 32
+NOT_PAUSED = 33
 
 mlt = {
     START: Embed(
@@ -183,6 +185,14 @@ music = {
     CURRENTLY_PLAYING: Embed(
         title='Currently playing:',
         color=BLUE
+    ),
+    NO_MUSIC: Embed(
+        title='No song is currently playing!',
+        color=RED
+    ),
+    NOT_PAUSED: Embed(
+        title='Song is not paused!',
+        color=RED
     )
 }
 

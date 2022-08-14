@@ -26,13 +26,20 @@ class MusicInstance:
         self.voice_client = None  # connection with vc, used for playing songs
         self.queue = []
         self.channel = None
+        self.is_playing = False  # is there a song that is currently played
+        self.is_paused = False
 
     @sync  # I want to use await in here, but I can't call await in lambda
-    async def _play_next(self):  # that's why I hope @sync will work
+    async def _play_next(self) -> None:  # that's why I hope @sync will work
         """
         Gets next song from queue, plays it and sends embed with current song's
         title.
         """
+        if not self.queue:
+            self.is_playing = False
+            return
+
+        self.is_playing = True
         song_data = self.queue.pop(0)
         url = song_data['source']
         title = song_data['title']
@@ -50,6 +57,7 @@ class MusicInstance:
         Plays song for the first time. It connects to the voice channel, plays
         a song and sends an embed with current song's title.
         """
+        self.is_playing = True
         song_data = self.queue.pop(0)
         url = song_data['source']
         title = song_data['title']
@@ -86,24 +94,39 @@ class MoriohChoRadio(commands.Cog):
             return {}
         return {'source': song['formats'][0]['url'], 'title': song['title']}
 
+    # Decorators ------------------------------------------------------------ #
+    def is_MusicInstance_created() -> bool:
+        """
+        Simple decorator that checks if MusicInstance is created for guild.
+        It means that music is played even if someone kicked the bot from vc.
+        """
+        async def predicate(ctx) -> bool:
+            return str(ctx.guild.id) in instances.keys()
+        return commands.check(predicate)
+
     # Commands -------------------------------------------------------------- #
     @commands.command(aliases=['p'])
     async def play(self, ctx, *args):
         """Plays a song with the given title or link."""
-        # get text from command and send error if empty
-        query = ' '.join(args)
-        if query == '':
-            await ctx.send(embed=e.music[e.EMPTY_QUERY])
-            return
-
         # get voice channel and send error if user not connected
         voice_channel = ctx.author.voice.channel
         if voice_channel is None:
             await ctx.send(embed=e.music[e.USER_NOT_CONNECTED])
             return
 
-        # get song data from YouTube
         key = str(ctx.guild.id)
+
+        query = ' '.join(args)  # get title/url from command
+        if query == '':
+            # unpause song if paused
+            if key in instances.keys() and instances[key].is_paused:
+                instances[key].is_paused = False
+                instances[key].voice_client.resume()
+            else:  # query is empty and song is not paused
+                await ctx.send(embed=e.music[e.EMPTY_QUERY])
+            return
+
+        # get song data from YouTube
         song_data = self._search(query)
         # create MusicInstance for guild if not created
         if key not in instances.keys():
@@ -113,17 +136,61 @@ class MoriohChoRadio(commands.Cog):
         instances[key].queue.append(song_data)
         await instances[key].play_music(ctx)
 
+    @commands.command()
+    @is_MusicInstance_created()
+    async def pause(self, ctx):
+        """Pauses (or resumes) current song."""
+        key = str(ctx.guild.id)
+        if not instances[key].is_playing:
+            await ctx.send(embed=e.music[e.NO_MUSIC])
+            return
+
+        if not instances[key].is_paused:
+            instances[key].voice_client.pause()
+        else:
+            instances[key].voice_client.resume()
+        instances[key].is_paused = not instances[key].is_paused
+
+    @commands.command(aliases=['r'])
+    @is_MusicInstance_created()
+    async def resume(self, ctx):
+        """Resumes current song."""
+        key = str(ctx.guild.id)
+        if not instances[key].is_playing:
+            await ctx.send(embed=e.music[e.NO_MUSIC])
+            return
+
+        if instances[key].is_paused:
+            instances[key].voice_client.resume()
+            instances[key].is_playing = True
+        else:
+            await ctx.send(embed=e.music[e.NOT_PAUSED])
+
+    @commands.command(aliases=['s'])
+    @is_MusicInstance_created()
+    async def skip(self, ctx):
+        """Skips current song and tries to play next one in the queue."""
+        key = str(ctx.guild.id)
+        if not instances[key].is_playing:
+            await ctx.send(embed=e.music[e.NO_MUSIC])
+            return
+
+        instances[key].voice_client.stop()
+        await instances[key].play_music(ctx)
+
     @commands.command(aliases=['q'])
+    @is_MusicInstance_created()
     async def queue(self, ctx):
         """Shows songs in music queue."""
         key = str(ctx.guild.id)
-        if key not in instances.keys():
+        if key not in instances.keys():  # send proper embed if not connected
             await ctx.send(embed=e.music[e.NOT_CONNECTED])
-        else:
+        else:  # send embed with song queue
             embed = e.music[e.QUEUE].copy()
             if len(instances[key].queue) == 0:
                 embed.add_field(name='-')
             else:
+                # display next 5 songs
                 for i, entry in enumerate(instances[key].queue[:5]):
                     embed.add_field(
                         name=f'{i + 1}. {entry["title"]}', inline=False
@@ -131,6 +198,7 @@ class MoriohChoRadio(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command(aliases=['c'])
+    @is_MusicInstance_created()
     async def clear(self, ctx):
         """Stops currently played music and clear queue."""
         key = str(ctx.guild.id)
@@ -142,15 +210,27 @@ class MoriohChoRadio(commands.Cog):
             await ctx.send(embed=e.music[e.CLEARED])
 
     @commands.command(aliases=['l'])
+    @is_MusicInstance_created()
     async def leave(self, ctx):
         """Kicks the bot from voice channel and delete music instance."""
         key = str(ctx.guild.id)
-        if key not in instances.keys():
-            await ctx.send(embed=e.music[e.NOT_CONNECTED])
-        else:
-            # TODO: stop playing music here if some errors occur in the future
+        instances[key].voice_channel.stop()
+        if instances[key].voice_client.is_connected():
             await instances[key].voice_client.disconnect()
-            del instances[key]
+        del instances[key]
+
+    # Errors ---------------------------------------------------------------- #
+    @pause.error
+    @resume.error
+    @queue.error
+    @clear.error
+    @leave.error
+    async def MusicInstance_not_created_error(self, ctx, error):
+        """Error handler if MusicInstance is not created for guild."""
+        if isinstance(error, commands.CheckFailure):
+            await ctx.send(embed=e.mlt[e.NOT_CONNECTED])
+        else:
+            logger.error(f'Unknown error in start_mlt: {error}')
 
 
 def setup(client):
