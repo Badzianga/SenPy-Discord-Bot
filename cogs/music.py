@@ -134,7 +134,8 @@ class MoriohChoRadio(commands.Cog):
 
         # add song to queue and play it if bot doesn't play anything
         instances[key].queue.append(song_data)
-        await instances[key].play_music(ctx)
+        if not instances[key].is_playing:
+            await instances[key].play_music(ctx)
 
     @commands.command()
     @is_MusicInstance_created()
@@ -214,7 +215,7 @@ class MoriohChoRadio(commands.Cog):
     async def leave(self, ctx):
         """Kicks the bot from voice channel and delete music instance."""
         key = str(ctx.guild.id)
-        instances[key].voice_channel.stop()
+        instances[key].voice_client.stop()
         if instances[key].voice_client.is_connected():
             await instances[key].voice_client.disconnect()
         del instances[key]
