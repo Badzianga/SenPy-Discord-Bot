@@ -42,6 +42,8 @@ NO_SUBREDDITS = 30
 SUBREDDITS = 31
 NO_MUSIC = 32
 NOT_PAUSED = 33
+CHANGED = 34
+TOO_SHORT = 35
 
 mlt = {
     START: Embed(
@@ -229,5 +231,17 @@ rs = {
         title='Connected subreddits:',
         description='',
         color=BLUE
+    )
+}
+
+prefixes = {
+    TOO_SHORT: Embed(
+        title='Command prefix should be only one character!',
+        color=RED
+    ),
+    CHANGED: Embed(
+        title='Command prefix changed successfully!',
+        description='Current command prefix: ',
+        color=GREEN
     )
 }

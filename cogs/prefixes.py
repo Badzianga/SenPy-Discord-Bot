@@ -4,6 +4,8 @@ from os import listdir
 
 from discord.ext import commands
 
+import embeds as e
+
 logger = getLogger('discord')
 
 
@@ -77,6 +79,12 @@ class PrefixManager(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def change_prefix(self, ctx, prefix: str):
         """Change guild prefix."""
+
+        # prefix should only be one character
+        if len(prefix) != 1:
+            await ctx.send(embed=e.prefixes[e.TOO_SHORT])
+            return
+
         with open('prefixes.json', 'r') as f:
             prefixes = json.load(f)
 
@@ -85,7 +93,10 @@ class PrefixManager(commands.Cog):
         with open('prefixes.json', 'w') as f:
             json.dump(prefixes, f)
 
-        await ctx.send(f'Changed command prefix to {prefix}')
+        # send embed message with new prefix
+        embed = e.prefixes[e.CHANGED]
+        embed.description += prefix
+        await ctx.send(embed=embed)
 
 
 def setup(client):
