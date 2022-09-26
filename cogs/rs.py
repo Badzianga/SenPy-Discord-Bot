@@ -143,6 +143,12 @@ class RedditSurfer(commands.Cog):
             del database[key][name]
             logger.info(f'Removed r/{name} from channel: {key}')
             await ctx.send(embed=e.rs[e.SUCCESSFULLY_REMOVED])
+
+            # remove channel from database if it doesn't have any subreddits
+            if not database[key]:
+                del database[key]
+                logger.info(f'Removed channel {key} from database')
+
             self._save_database_to_json()
 
     @commands.command()
